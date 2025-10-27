@@ -1,0 +1,368 @@
+<div class="dashboard" [class.dark-theme]="modeIndex === 0" [class.light-theme]="modeIndex === 1" [class.glass-theme]="modeIndex === 2">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 class="logo">💊 PharmaSys</h2>
+      <div class="sidebar-toggle" (click)="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+    
+   <nav class="sidebar-nav">
+  <a class="nav-item active">
+    <i class="icon">🏠</i>
+    <span class="nav-text">Dashboard</span>
+  </a>
+  <a class="nav-item">
+    <i class="icon">👥</i>
+    <span class="nav-text">Customers</span>
+  </a>
+  <a class="nav-item">
+    <i class="icon">📦</i>
+    <span class="nav-text">All Medicines</span>
+  </a>
+  <!-- 🔹 New Add Medicine option -->
+ <a class="nav-item" (click)="openAddMedicineModal()">
+  <i class="icon">➕</i>
+  <span class="nav-text">Add Medicine</span>
+</a>
+
+  <a class="nav-item">
+    <i class="icon">📊</i>
+    <span class="nav-text">Reports</span>
+  </a>
+  <a class="nav-item">
+    <i class="icon">⚙️</i>
+    <span class="nav-text">Settings</span>
+  </a>
+</nav>
+
+    
+    <div class="sidebar-footer">
+      <button class="logout-btn">
+        <i class="icon">🚪</i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <main class="main-area" [class.sidebar-collapsed]="isSidebarCollapsed">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="header-title">Medicine Management System</h1>
+        <div class="header-actions">
+          <button class="theme-toggle" (click)="toggleTheme()">
+            <span class="theme-icon">
+              {{ modeIndex === 0 ? "🌙" : modeIndex === 1 ? "☀️" : "✨" }}
+            </span>
+            <span class="theme-text">
+              {{ modeIndex === 0 ? "Dark Mode" : modeIndex === 1 ? "Light Mode" : "Glass Mode" }}
+            </span>
+          </button>
+          <div class="user-profile">
+            <div class="user-avatar">U</div>
+            <span class="user-name">Admin</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search Bar -->
+    <section class="search-section">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Search medicine..."
+            (input)="searchMedicine()"
+            (keydown)="onKeyDown($event)"
+            class="search-bar"
+            autocomplete="off"
+          />
+          <i class="search-icon"></i>
+        </div>
+        <ul *ngIf="suggestions.length > 0" class="suggestions-dropdown">
+          <li
+            *ngFor="let s of suggestions; let i = index"
+            [class.highlight]="i === highlightedIndex"
+            (click)="selectSuggestion(s)"
+            class="suggestion-item"
+          >
+            <span class="medicine-name">{{ s.name }}</span>
+            <span class="medicine-stock" [class.low-stock]="s.quantity < 10">
+              {{ s.quantity }} in stock
+            </span>
+            <span class="medicine-price">${{ s.price | number:'1.2-2' }}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Quick Stats -->
+    <section class="stats-section">
+      <div class="stats-grid">
+
+        <!-- Out of Stock Card -->
+        <div class="stat-card stat-danger" (click)="openOutOfStockModal()" style="cursor: pointer;">
+          <div class="stat-icon">📉</div>
+          <div class="stat-content">
+            <h3 class="stat-title">Out of Stock</h3>
+            <p class="stat-value">{{ outOfStock }}</p>
+          </div>
+        </div>
+
+        <!-- Customers Today -->
+        <div class="stat-card stat-success">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3 class="stat-title">Customers Today</h3>
+            <p class="stat-value">{{ todayCustomers }}</p>
+          </div>
+        </div>
+
+        <!-- Today's Revenue -->
+        <div class="stat-card stat-info">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <h3 class="stat-title">Today's Revenue</h3>
+            <p class="stat-value">${{ todayRevenue | number }}</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+      <!-- Left Panel -->
+      <div class="content-panel">
+
+        <!-- Add Customer Form -->
+        <section class="card form-section">
+          <div class="card-header">
+            <h2 class="card-title">Add Customer Record</h2>
+            <div class="card-actions">
+              <button class="card-action-btn" title="Clear form">↺</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="addCustomer()" class="customer-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="customerName">Customer Name</label>
+                  <input 
+                    type="text" 
+                    id="customerName"
+                    [(ngModel)]="customer.name" 
+                    name="name" 
+                    placeholder="Enter customer name" 
+                    required 
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="customerPhone">Phone Number</label>
+                  <input 
+                    type="text" 
+                    id="customerPhone"
+                    [(ngModel)]="customer.phone" 
+                    name="phone" 
+                    placeholder="Enter phone number" 
+                    required 
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="medicineName">Medicine Name</label>
+                  <input 
+                    type="text" 
+                    id="medicineName"
+                    [(ngModel)]="customer.medicine" 
+                    name="medicine" 
+                    placeholder="Enter medicine name" 
+                    required 
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="quantity">Quantity</label>
+                  <input 
+                    type="number" 
+                    id="quantity"
+                    [(ngModel)]="customer.quantity" 
+                    name="quantity" 
+                    placeholder="Enter quantity" 
+                    required 
+                    min="1" 
+                  />
+                </div>
+              </div>
+
+              <!-- Add Medicine Modal -->
+<div class="modal-backdrop" *ngIf="showAddMedicineModal" (click)="closeAddMedicineModal()"></div>
+<div class="medicine-modal" *ngIf="showAddMedicineModal" [class.active]="showAddMedicineModal">
+  <div class="modal-header">
+    <h4 class="modal-title">Add Medicine</h4>
+    <button class="modal-close" (click)="closeAddMedicineModal()">&times;</button>
+  </div>
+  <div class="modal-body">
+    <form (ngSubmit)="addMedicine()" #medicineForm="ngForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input id="name" name="name" [(ngModel)]="newMedicine.name" required />
+      </div>
+      <div class="form-group">
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" name="quantity" [(ngModel)]="newMedicine.quantity" required />
+      </div>
+      <div class="form-group">
+        <label for="price">Price</label>
+        <input type="number" id="price" name="price" [(ngModel)]="newMedicine.price" required />
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeAddMedicineModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+              <!-- Total Price Display -->
+              <div class="total-price-display">
+                <p><b>Total Price:</b> ${{ (customer.price || 0) * customer.quantity | number:'1.2-2' }}</p>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  <i class="btn-icon">➕</i>
+                  Add Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Today's Customer List -->
+        <section class="card customer-list-section">
+          <div class="card-header">
+            <h2 class="card-title">Today's Customers</h2>
+            <div class="card-actions">
+              <button class="card-action-btn" title="Refresh">🔄</button>
+              <button class="card-action-btn" title="Export">📤</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Medicine</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of customers; index as i">
+                    <td class="text-center">{{ i + 1 }}</td>
+                    <td>{{ c.customer?.name }}</td>
+                    <td>{{ c.customer?.phone }}</td>
+                    <td>{{ c.medicine?.name }}</td>
+                    <td class="text-center">{{ c.quantity }}</td>
+                    <td class="text-center">${{ (c.medicine.price || 0) * c.quantity | number:'1.2-2' }}</td>
+                    <td>{{ c.purchaseDateTime | date:'shortDate' }}</td>
+                    <td class="text-center">
+                      <button class="action-btn" title="Edit">✏️</button>
+                      <button class="action-btn" title="Delete">🗑️</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+    <!-- Medicine Info Modal -->
+<div class="modal-backdrop" *ngIf="selectedMedicine" (click)="closePopup()"></div>
+<div class="medicine-modal" *ngIf="selectedMedicine" [class.active]="selectedMedicine">
+  <div class="modal-header">
+    <h4 class="modal-title">{{ selectedMedicine.name }}</h4>
+    <button class="modal-close" (click)="closePopup()">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="medicine-details">
+      <div class="detail-item">
+        <span class="detail-label">Stock:</span>
+        <span class="detail-value" [class.low-stock]="selectedMedicine.quantity < 10">
+          {{ selectedMedicine.quantity }}
+        </span>
+      </div>
+      <div class="detail-item" *ngIf="selectedMedicine.description">
+        <span class="detail-label">Description:</span>
+        <span class="detail-value">{{ selectedMedicine.description }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Price:</span>
+        <span class="detail-value">${{ selectedMedicine.price | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closePopup()">Cancel</button>
+    <button class="btn btn-primary" (click)="addToCustomer()">Add to Customer</button>
+  </div>
+</div>
+
+<!-- Out-of-Stock Modal -->
+<div class="modal-backdrop" *ngIf="showOutOfStockModal" (click)="closeOutOfStockModal()"></div>
+<div class="medicine-modal" *ngIf="showOutOfStockModal" [class.active]="showOutOfStockModal">
+  <div class="modal-header">
+    <h4 class="modal-title">Out of Stock Medicines</h4>
+    <button class="modal-close" (click)="closeOutOfStockModal()">&times;</button>
+  </div>
+  <div class="modal-body">
+    <ul class="out-of-stock-list">
+      <li *ngFor="let m of outOfStockMedicines">
+        <span class="medicine-name">{{ m.name }}</span>
+        <span class="medicine-quantity">- {{ m.quantity }} in stock</span>
+      </li>
+    </ul>
+    <p *ngIf="outOfStockMedicines.length === 0">All medicines are in stock.</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeOutOfStockModal()">Close</button>
+    <button class="btn btn-primary" (click)="exportCSV()">Download CSV</button>
+  </div>
+</div>
+
+
+
+<!-- Add Customer Form Header Actions -->
+<div class="card-actions">
+  <button class="card-action-btn" title="Clear form" (click)="clearForm()">↺</button>
+</div>
+
+<!-- Today's Customers Card Header Actions -->
+<div class="card-actions">
+  <button class="card-action-btn" title="Refresh" (click)="loadTodayPurchases()">🔄</button>
+  <button class="card-action-btn" title="Export" (click)="exportCSV()">📤</button>
+</div>
+
+  </main>
+</div>
